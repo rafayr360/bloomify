@@ -39,20 +39,33 @@
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2));
-  border: 1px solid var(--accent-primary);
-  box-shadow: 0 0 16px var(--accent-glow);
+  background: linear-gradient(135deg, rgba(255, 184, 0, 0.25), rgba(0, 245, 160, 0.25));
+  border: 1px solid var(--accent-secondary);
+  box-shadow: 0 0 18px var(--accent-glow);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+[data-theme="light"] .logo-icon.lotus-logo {
+  background: linear-gradient(135deg, rgba(217, 107, 39, 0.15), rgba(91, 112, 82, 0.15));
+  border-color: var(--accent-primary);
+  box-shadow: 0 4px 12px rgba(217, 107, 39, 0.15);
+}
+
 .logo-text {
-  font-size: 1.35rem;
+  font-size: 1.4rem;
   font-weight: 800;
   letter-spacing: -0.5px;
   color: var(--text-primary);
-  background: linear-gradient(135deg, var(--text-primary), var(--accent-secondary));
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-theme="light"] .logo-text {
+  background: linear-gradient(135deg, var(--text-primary), var(--accent-primary));
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -195,25 +208,36 @@
 }
 
 .chip {
-  padding: 6px 14px;
+  padding: 8px 16px;
   border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: 0.88rem;
+  font-weight: 600;
   background-color: var(--bg-secondary);
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .chip:hover {
-  border-color: var(--accent-primary);
+  border-color: var(--accent-secondary);
   color: var(--text-primary);
+  transform: translateY(-1px);
 }
 
 .chip.active {
-  background-color: var(--accent-primary);
+  background: linear-gradient(135deg, var(--accent-secondary) 0%, #00d285 100%);
+  color: #0b131e;
+  border-color: var(--accent-secondary);
+  box-shadow: 0 4px 14px var(--accent-glow);
+  font-weight: 700;
+}
+
+[data-theme="light"] .chip.active {
+  background: linear-gradient(135deg, var(--accent-primary) 0%, #e07a38 100%);
   color: #ffffff;
   border-color: var(--accent-primary);
+  box-shadow: 0 4px 14px var(--accent-glow);
 }
 
 .results-count {
@@ -229,7 +253,6 @@
   gap: 24px;
 }
 
-/* Plant Card */
 .plant-card {
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
@@ -240,14 +263,23 @@
   cursor: pointer;
   position: relative;
   box-shadow: var(--shadow-sm);
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+  backdrop-filter: blur(16px);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), 
+              box-shadow 0.3s ease, 
+              border-color 0.3s ease,
+              background-color 0.3s ease;
 }
 
 .plant-card:hover {
-  transform: translateY(-6px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--accent-primary);
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 12px 32px var(--accent-glow);
+  border-color: var(--accent-secondary);
   background-color: var(--card-hover);
+}
+
+[data-theme="light"] .plant-card:hover {
+  border-color: var(--accent-primary);
+  box-shadow: 0 12px 28px rgba(217, 107, 39, 0.16);
 }
 
 .card-image-container {
