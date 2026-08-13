@@ -1,6 +1,7 @@
 // src/App.jsx
 import React, { useState } from 'react';
 import Navbar from './components/Navbar';
+import BotanicalBackground from './components/BotanicalBackground';
 import Library from './pages/Library';
 import Detail from './pages/Detail';
 import Favorites from './pages/Favorites';
@@ -68,6 +69,7 @@ export default function App() {
 
   return (
     <div className="app-container">
+      <BotanicalBackground />
       <Navbar 
         currentPage={currentPage} 
         navigateTo={navigateTo} 

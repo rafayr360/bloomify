@@ -4,6 +4,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .main-content {
@@ -12,6 +13,8 @@
   width: 100%;
   margin: 0 auto;
   padding: 24px 20px 60px;
+  position: relative;
+  z-index: 1;
 }
 
 /* Navbar */
@@ -806,7 +809,125 @@
   font-size: 3rem;
 }
 
-/* Responsive */
+/* Responsive Botanical Leaf Background Overlay */
+.botanical-bg-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.botanical-art {
+  position: absolute;
+  opacity: 0;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+[data-theme="light"] .botanical-art {
+  opacity: 1;
+}
+
+.top-right-art {
+  top: -30px;
+  right: -50px;
+  width: 480px;
+  height: 480px;
+}
+
+.bottom-left-art {
+  bottom: -40px;
+  left: -50px;
+  width: 420px;
+  height: 420px;
+}
+
+.botanical-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.blob-bg-path {
+  fill: #c8d8c3;
+  opacity: 0.55;
+  transition: fill 0.3s ease;
+}
+
+.leaf-stem, 
+.leaf-stem-secondary {
+  stroke: #4a6b46;
+  fill: none;
+  transition: stroke 0.3s ease;
+}
+
+.leaf-outline {
+  stroke: #3d5c39;
+  fill: rgba(90, 130, 80, 0.12);
+  transition: stroke 0.3s ease, fill 0.3s ease;
+}
+
+.leaf-vein {
+  stroke: #5a8250;
+  fill: none;
+  opacity: 0.7;
+  transition: stroke 0.3s ease;
+}
+
+.leaf-leaflet {
+  stroke: #4a6b46;
+  fill: rgba(74, 107, 70, 0.18);
+  transition: stroke 0.3s ease, fill 0.3s ease;
+}
+
+/* Dark Mode Neon Orbs */
+.neon-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+:root:not([data-theme="light"]) .neon-orb {
+  opacity: 0.25;
+}
+
+.orb-primary {
+  top: -120px;
+  right: -100px;
+  width: 550px;
+  height: 550px;
+  background: var(--accent-secondary);
+}
+
+.orb-secondary {
+  bottom: -120px;
+  left: -100px;
+  width: 480px;
+  height: 480px;
+  background: var(--accent-primary);
+}
+
+/* Responsive Breakpoints for Botanical Leaf Background */
+@media (max-width: 1024px) {
+  .top-right-art {
+    top: -20px;
+    right: -40px;
+    width: 360px;
+    height: 360px;
+  }
+  .bottom-left-art {
+    bottom: -30px;
+    left: -40px;
+    width: 300px;
+    height: 300px;
+  }
+}
+
 @media (max-width: 900px) {
   .detail-hero {
     grid-template-columns: 1fr;
@@ -816,5 +937,22 @@
   }
   .journal-stats {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .top-right-art {
+    top: -10px;
+    right: -30px;
+    width: 260px;
+    height: 260px;
+    opacity: 0.7;
+  }
+  .bottom-left-art {
+    bottom: -20px;
+    left: -30px;
+    width: 220px;
+    height: 220px;
+    opacity: 0.5;
   }
 }
