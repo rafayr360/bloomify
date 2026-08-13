@@ -1,4 +1,3 @@
-// src/pages/Detail.jsx
 import React, { useState } from 'react';
 import { plantsData } from '../mockData';
 
