@@ -1,5 +1,6 @@
 // src/pages/Signup.jsx
 import React, { useState } from 'react';
+import { registerWithEmail } from '../firebase';
 
 export default function Signup({ navigateTo }) {
   const [formData, setFormData] = useState({
@@ -22,7 +23,7 @@ export default function Signup({ navigateTo }) {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -45,11 +46,23 @@ export default function Signup({ navigateTo }) {
 
     setLoading(true);
 
-    // Simulate successful registration
-    setTimeout(() => {
+    try {
+      await registerWithEmail(formData);
       setLoading(false);
       navigateTo('verify', { email: formData.email });
-    }, 800);
+    } catch (err) {
+      setLoading(false);
+      console.error(err);
+      if (err.code === 'auth/email-already-in-use') {
+        setError('An account with this email address already exists.');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Please provide a valid email address.');
+      } else if (err.code === 'auth/weak-password') {
+        setError('Password is too weak. Please use a stronger password.');
+      } else {
+        setError(err.message || 'Failed to create account. Please try again.');
+      }
+    }
   };
 
   return (
@@ -71,7 +84,7 @@ export default function Signup({ navigateTo }) {
         {error && <div className="auth-error-banner">{error}</div>}
 
         <form onSubmit={handleSignup} className="auth-form">
-          {/* Name Row: First, Middle (Optional), Last */}
+          {/* Name Row */}
           <div className="form-row grid-3">
             <div className="form-group">
               <label htmlFor="firstName">First Name <span className="req">*</span></label>
@@ -79,32 +92,27 @@ export default function Signup({ navigateTo }) {
                 id="firstName"
                 name="firstName"
                 type="text"
-                placeholder="First Name"
                 value={formData.firstName}
                 onChange={handleChange}
                 required
               />
             </div>
-
             <div className="form-group">
               <label htmlFor="middleName">Middle Name <span className="opt">(Optional)</span></label>
               <input
                 id="middleName"
                 name="middleName"
                 type="text"
-                placeholder="Middle Name"
                 value={formData.middleName}
                 onChange={handleChange}
               />
             </div>
-
             <div className="form-group">
               <label htmlFor="lastName">Last Name <span className="req">*</span></label>
               <input
                 id="lastName"
                 name="lastName"
                 type="text"
-                placeholder="Last Name"
                 value={formData.lastName}
                 onChange={handleChange}
                 required
@@ -112,7 +120,7 @@ export default function Signup({ navigateTo }) {
             </div>
           </div>
 
-          {/* Contact Row: Email, Phone */}
+          {/* Contact Row */}
           <div className="form-row grid-2">
             <div className="form-group">
               <label htmlFor="email">Email Address <span className="req">*</span></label>
@@ -125,14 +133,12 @@ export default function Signup({ navigateTo }) {
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="your.email@example.com"
                   value={formData.email}
                   onChange={handleChange}
                   required
                 />
               </div>
             </div>
-
             <div className="form-group">
               <label htmlFor="phone">Phone Number <span className="req">*</span></label>
               <div className="input-wrapper">
@@ -143,7 +149,6 @@ export default function Signup({ navigateTo }) {
                   id="phone"
                   name="phone"
                   type="tel"
-                  placeholder="+1 (555) 000-0000"
                   value={formData.phone}
                   onChange={handleChange}
                   required
@@ -152,7 +157,7 @@ export default function Signup({ navigateTo }) {
             </div>
           </div>
 
-          {/* Password Row: Password, Confirm Password */}
+          {/* Password Row */}
           <div className="form-row grid-2">
             <div className="form-group">
               <label htmlFor="password">Password <span className="req">*</span></label>
@@ -165,7 +170,6 @@ export default function Signup({ navigateTo }) {
                   id="password"
                   name="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Min 6 characters"
                   value={formData.password}
                   onChange={handleChange}
                   required
@@ -174,8 +178,6 @@ export default function Signup({ navigateTo }) {
                   type="button"
                   className="toggle-password-btn"
                   onClick={() => setShowPassword(!showPassword)}
-                  title={showPassword ? "Hide password" : "Show password"}
-                  aria-label="Toggle password visibility"
                 >
                   {showPassword ? (
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -191,7 +193,6 @@ export default function Signup({ navigateTo }) {
                 </button>
               </div>
             </div>
-
             <div className="form-group">
               <label htmlFor="confirmPassword">Confirm Password <span className="req">*</span></label>
               <div className="input-wrapper">
@@ -203,7 +204,6 @@ export default function Signup({ navigateTo }) {
                   id="confirmPassword"
                   name="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder="Repeat password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   required
@@ -212,8 +212,6 @@ export default function Signup({ navigateTo }) {
                   type="button"
                   className="toggle-password-btn"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  title={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-                  aria-label="Toggle confirm password visibility"
                 >
                   {showConfirmPassword ? (
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

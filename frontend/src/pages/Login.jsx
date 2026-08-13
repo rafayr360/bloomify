@@ -1,5 +1,6 @@
 // src/pages/Login.jsx
 import React, { useState } from 'react';
+import { loginWithEmail, loginWithGoogle, isFirebaseConfigured } from '../firebase';
 
 export default function Login({ navigateTo, onLoginSuccess }) {
   const [email, setEmail] = useState('');
@@ -8,7 +9,7 @@ export default function Login({ navigateTo, onLoginSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -18,33 +19,48 @@ export default function Login({ navigateTo, onLoginSuccess }) {
     }
 
     setLoading(true);
-    // Simulate successful login for demonstration
-    setTimeout(() => {
-      onLoginSuccess({
-        uid: 'demo_user_123',
-        email: email,
-        displayName: email.split('@')[0],
-        emailVerified: true
-      });
+    try {
+      const user = await loginWithEmail(email, password);
       setLoading(false);
-      navigateTo('library');
-    }, 800);
+      
+      if (!user.emailVerified) {
+        navigateTo('verify', { email: user.email });
+      } else {
+        onLoginSuccess(user);
+        navigateTo('library');
+      }
+    } catch (err) {
+      setLoading(false);
+      console.error(err);
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        setError('Invalid email or password. Please check your credentials.');
+      } else if (err.code === 'auth/too-many-requests') {
+        setError('Too many failed login attempts. Please try again later.');
+      } else {
+        setError(err.message || 'Failed to log in. Please try again.');
+      }
+    }
   };
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = async () => {
     setError('');
     setLoading(true);
-    // Simulate Google login
-    setTimeout(() => {
-      onLoginSuccess({
-        uid: 'demo_google_user',
-        email: 'google.user@example.com',
-        displayName: 'Google Explorer',
-        emailVerified: true
-      });
-      setLoading(false);
+    try {
+      const user = await loginWithGoogle();
+      onLoginSuccess(user);
       navigateTo('library');
-    }, 800);
+    } catch (err) {
+      console.error("Google Login error:", err);
+      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+        // Stop loading state silently
+      } else if (err.code === 'auth/popup-blocked') {
+        setError('Popup was blocked by your browser. Please allow popups for this site.');
+      } else {
+        setError(err.message || 'Failed to sign in with Google.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -109,13 +125,11 @@ export default function Login({ navigateTo, onLoginSuccess }) {
                 aria-label="Toggle password visibility"
               >
                 {showPassword ? (
-                  /* Eye Off Icon */
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
                     <line x1="1" y1="1" x2="23" y2="23"/>
                   </svg>
                 ) : (
-                  /* Eye Icon */
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                     <circle cx="12" cy="12" r="3"/>
