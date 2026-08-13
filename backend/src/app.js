@@ -18,6 +18,12 @@ app.get('/api/health', (req, res) => {
 const plantsRoutes = require('./routes/plants.routes');
 app.use('/api/plants', plantsRoutes);
 
+const typesRoutes = require('./routes/types.routes');
+app.use('/api/types', typesRoutes);
+
+const featuresRoutes = require('./routes/features.routes');
+app.use('/api/features', featuresRoutes);
+
 // const favoritesRoutes = require('./routes/favorites.routes');
 // app.use('/api/favorites', favoritesRoutes);
 
