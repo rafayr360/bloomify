@@ -1,10 +1,9 @@
 // src/pages/Favorites.jsx
 import React from 'react';
 import PlantCard from '../components/PlantCard';
-import { plantsData } from '../mockData';
 
-export default function Favorites({ navigateTo, favorites, toggleFavorite }) {
-  const savedPlants = plantsData.filter(plant => favorites.includes(plant.id));
+export default function Favorites({ navigateTo, favorites, toggleFavorite, plants }) {
+  const savedPlants = plants.filter(plant => favorites.includes(plant.id));
 
   return (
     <div className="page-container favorites-page">

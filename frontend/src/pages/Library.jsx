@@ -2,27 +2,43 @@
 import React, { useState, useMemo } from 'react';
 import FilterBar from '../components/FilterBar';
 import PlantCard from '../components/PlantCard';
-import { plantsData } from '../mockData';
 
-export default function Library({ navigateTo, favorites, toggleFavorite }) {
+export default function Library({ navigateTo, favorites, toggleFavorite, plants, isLoading }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sunlightFilter, setSunlightFilter] = useState('all');
 
   const filteredPlants = useMemo(() => {
-    return plantsData.filter(plant => {
+    return (plants || []).filter(plant => {
       const matchesSearch = 
-        plant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        plant.scientificName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        plant.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        plant.commonPests.some(p => p.toLowerCase().includes(searchTerm.toLowerCase()));
+        (plant.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (plant.scientificName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (plant.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (plant.commonPests || []).some(p => p.toLowerCase().includes(searchTerm.toLowerCase()));
 
       const matchesCategory = categoryFilter === 'all' || plant.category === categoryFilter;
       const matchesSunlight = sunlightFilter === 'all' || plant.sunlight === sunlightFilter;
 
       return matchesSearch && matchesCategory && matchesSunlight;
     });
-  }, [searchTerm, categoryFilter, sunlightFilter]);
+  }, [plants, searchTerm, categoryFilter, sunlightFilter]);
+
+  if (isLoading) {
+    return (
+      <div className="page-container library-page">
+        <header className="page-header">
+          <h1 className="page-title">Plant Encyclopedia</h1>
+          <p className="page-subtitle">
+            Explore botanical care guides, sunlight requirements, watering schedules, and common pests.
+          </p>
+        </header>
+        <div className="loading-spinner-container">
+          <div className="loading-spinner"></div>
+          <p>Connecting to Neon Database & loading plant data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-container library-page">

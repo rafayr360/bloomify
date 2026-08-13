@@ -1,12 +1,49 @@
+// src/pages/Detail.jsx
 import React, { useState } from 'react';
-import { plantsData } from '../mockData';
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1512428559087-560fa5ceab42?w=600&auto=format&fit=crop";
 
-export default function Detail({ plantId, navigateTo, toggleFavorite, isFavorite, careLogs, addCareLog, deleteCareLog }) {
-  const plant = plantsData.find(p => p.id === plantId) || plantsData[0];
+export default function Detail({ plantId, navigateTo, toggleFavorite, isFavorite, careLogs, addCareLog, deleteCareLog, currentUser, plants, isLoading }) {
+  const plant = (plants || []).find(p => p.id === plantId || p.slug === plantId) || (plants && plants.length > 0 ? plants[0] : null);
   const [logNote, setLogNote] = useState('');
   const [logAction, setLogAction] = useState('Watered');
+
+  if (isLoading) {
+    return (
+      <div className="page-container detail-page">
+        <button className="back-btn" onClick={() => navigateTo('library')}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+          Back to Encyclopedia
+        </button>
+        <div className="loading-spinner-container">
+          <div className="loading-spinner"></div>
+          <p>Loading plant details from database...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!plant) {
+    return (
+      <div className="page-container detail-page">
+        <button className="back-btn" onClick={() => navigateTo('library')}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+          Back to Encyclopedia
+        </button>
+        <div className="empty-state">
+          <div className="empty-icon">🌱</div>
+          <h3>Plant Not Found</h3>
+          <p>The requested plant could not be found in the database.</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleLogSubmit = (e) => {
     e.preventDefault();
@@ -118,32 +155,46 @@ export default function Detail({ plantId, navigateTo, toggleFavorite, isFavorite
         <h2 className="section-title">Care Journal for {plant.name}</h2>
         <p className="section-desc">Record watering dates, pruning notes, and fertilizing schedules.</p>
 
-        <form onSubmit={handleLogSubmit} className="care-log-form">
-          <div className="form-row">
-            <select 
-              value={logAction} 
-              onChange={(e) => setLogAction(e.target.value)}
-              className="log-select"
+        {!currentUser ? (
+          <div className="care-log-locked-prompt glass-card">
+            <h4>Want to track care for this plant?</h4>
+            <p>Log in or sign up to record watering dates, fertilizing schedules, and progress notes.</p>
+            <button 
+              type="button"
+              className="btn btn-primary" 
+              onClick={() => navigateTo('login')}
             >
-              <option value="Watered">💧 Watered</option>
-              <option value="Fertilized">🌱 Fertilized</option>
-              <option value="Pruned">✂️ Pruned</option>
-              <option value="Repotted">🪴 Repotted</option>
-              <option value="Pest Treated">🛡️ Pest Treated</option>
-            </select>
-            <input 
-              type="text"
-              placeholder="e.g. Added liquid seaweed fertilizer, soil felt dry..."
-              value={logNote}
-              onChange={(e) => setLogNote(e.target.value)}
-              className="log-input"
-              required
-            />
-            <button type="submit" className="btn btn-primary">
-              Log Action
+              Log In / Register
             </button>
           </div>
-        </form>
+        ) : (
+          <form onSubmit={handleLogSubmit} className="care-log-form">
+            <div className="form-row">
+              <select 
+                value={logAction} 
+                onChange={(e) => setLogAction(e.target.value)}
+                className="log-select"
+              >
+                <option value="Watered">💧 Watered</option>
+                <option value="Fertilized">🌱 Fertilized</option>
+                <option value="Pruned">✂️ Pruned</option>
+                <option value="Repotted">🪴 Repotted</option>
+                <option value="Pest Treated">🛡️ Pest Treated</option>
+              </select>
+              <input 
+                type="text"
+                placeholder="e.g. Added liquid seaweed fertilizer, soil felt dry..."
+                value={logNote}
+                onChange={(e) => setLogNote(e.target.value)}
+                className="log-input"
+                required
+              />
+              <button type="submit" className="btn btn-primary">
+                Log Action
+              </button>
+            </div>
+          </form>
+        )}
 
         <div className="care-timeline">
           {careLogs.length > 0 ? (

@@ -2,7 +2,7 @@
 import React from 'react';
 import ThemeToggle from './ThemeToggle';
 
-export default function Navbar({ currentPage, navigateTo, favoriteCount, currentUser, onLogout }) {
+export default function Navbar({ currentPage, navigateTo, favoriteCount, currentUser, onLogout, theme, toggleTheme }) {
   const getFirstName = () => {
     if (!currentUser) return '';
     if (currentUser.displayName) {
@@ -41,7 +41,7 @@ export default function Navbar({ currentPage, navigateTo, favoriteCount, current
           onClick={() => navigateTo('favorites')}
         >
           Garden Journal
-          {favoriteCount > 0 && <span className="nav-badge">{favoriteCount}</span>}
+          {currentUser && favoriteCount > 0 && <span className="nav-badge">{favoriteCount}</span>}
         </button>
         <button 
           className={`nav-item ai-btn ${currentPage === 'ai' ? 'active' : ''}`}
@@ -55,7 +55,7 @@ export default function Navbar({ currentPage, navigateTo, favoriteCount, current
       </nav>
 
       <div className="navbar-actions">
-        <ThemeToggle />
+        <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
 
         {currentUser ? (
           <div className="user-nav-profile">

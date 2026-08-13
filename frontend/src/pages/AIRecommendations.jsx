@@ -1,9 +1,8 @@
 // src/pages/AIRecommendations.jsx
 import React, { useState } from 'react';
-import { plantsData } from '../mockData';
 import PlantCard from '../components/PlantCard';
 
-export default function AIRecommendations({ navigateTo }) {
+export default function AIRecommendations({ navigateTo, plants }) {
   const [lightLevel, setLightLevel] = useState('Full Sun');
   const [waterHabit, setWaterHabit] = useState('Low');
   const [spaceType, setSpaceType] = useState('Balcony');
@@ -18,7 +17,7 @@ export default function AIRecommendations({ navigateTo }) {
 
     // Simulate AI LLM recommendation logic against seeded dataset
     setTimeout(() => {
-      let filtered = plantsData.filter(plant => {
+      let filtered = plants.filter(plant => {
         if (lightLevel === 'Full Sun' && plant.sunlight !== 'Full Sun') return false;
         if (lightLevel === 'Full Shade' && plant.sunlight !== 'Full Shade') return false;
         if (waterHabit === 'Low' && plant.waterFrequency === 'High') return false;
@@ -28,8 +27,9 @@ export default function AIRecommendations({ navigateTo }) {
       // If text prompt was entered, filter further by keywords
       if (customPrompt.trim()) {
         const query = customPrompt.toLowerCase();
-        const promptMatches = plantsData.filter(plant => 
+        const promptMatches = plants.filter(plant => 
           plant.name.toLowerCase().includes(query) ||
+          plant.scientificName.toLowerCase().includes(query) ||
           plant.description.toLowerCase().includes(query) ||
           plant.category.toLowerCase().includes(query) ||
           (query.includes('forget') || query.includes('easy')) && plant.difficulty === 'Easy'
@@ -41,7 +41,7 @@ export default function AIRecommendations({ navigateTo }) {
 
       // Fallback: pick top 3 matches if filter is empty
       if (filtered.length === 0) {
-        filtered = plantsData.slice(0, 3);
+        filtered = plants.slice(0, 3);
       }
 
       setRecommendations(filtered.slice(0, 6));

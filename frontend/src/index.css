@@ -69,10 +69,28 @@
   margin: 0;
   padding: 0;
   font-family: var(--font-sans);
+}
+
+body, 
+button, 
+input, 
+select, 
+textarea, 
+.card, 
+.glass-card, 
+.nav-item, 
+.chip, 
+.plant-card, 
+.favorite-heart-btn, 
+.delete-log-btn,
+.app-container,
+.navbar,
+.user-badge {
   transition: background-color var(--transition-speed) ease, 
               border-color var(--transition-speed) ease, 
               color var(--transition-speed) ease,
-              box-shadow var(--transition-speed) ease;
+              box-shadow var(--transition-speed) ease,
+              transform var(--transition-speed) ease;
 }
 
 body {

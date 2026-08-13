@@ -1,20 +1,7 @@
 // src/components/ThemeToggle.jsx
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 
-export default function ThemeToggle() {
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('theme') || 'dark';
-  });
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
-  };
-
+export default function ThemeToggle({ theme, toggleTheme }) {
   return (
     <button 
       onClick={toggleTheme} 
