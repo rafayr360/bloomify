@@ -15,8 +15,8 @@ app.get('/api/health', (req, res) => {
 // const authRoutes = require('./routes/auth.routes');
 // app.use('/api', authRoutes);
 
-// const plantsRoutes = require('./routes/plants.routes');
-// app.use('/api/plants', plantsRoutes);
+const plantsRoutes = require('./routes/plants.routes');
+app.use('/api/plants', plantsRoutes);
 
 // const favoritesRoutes = require('./routes/favorites.routes');
 // app.use('/api/favorites', favoritesRoutes);
