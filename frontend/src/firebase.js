@@ -1,184 +1,267 @@
 // src/firebase.js
-import { initializeApp } from 'firebase/app';
-import { 
-  getAuth, 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  signInWithPopup, 
-  GoogleAuthProvider, 
-  signOut, 
-  sendEmailVerification, 
-  updateProfile,
-  onAuthStateChanged
-} from 'firebase/auth';
-import { 
-  getFirestore, 
-  doc, 
-  setDoc, 
-  getDoc, 
-  updateDoc 
-} from 'firebase/firestore';
+// Mock Firebase SDK running purely in local storage / memory.
+// This allows you to keep all Login, Signup, and Verify Email pages working 
+// without installing the actual Firebase SDK or configuring external databases.
 
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "YOUR_FIREBASE_API_KEY",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "YOUR_PROJECT_ID",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "YOUR_PROJECT_ID.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "YOUR_MESSAGING_SENDER_ID",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "YOUR_APP_ID"
+// List of registered callbacks for auth state changes
+let authSubscribers = [];
+
+// Initialize current user from localStorage
+const getSavedCurrentUser = () => {
+  const saved = localStorage.getItem('bloomify_current_user');
+  return saved ? JSON.parse(saved) : null;
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const googleProvider = new GoogleAuthProvider();
-googleProvider.setCustomParameters({
-  prompt: 'select_account'
-});
-export { onAuthStateChanged };
+// Internal list of registered users
+const getLocalUsers = () => {
+  const saved = localStorage.getItem('bloomify_local_users');
+  return saved ? JSON.parse(saved) : [];
+};
 
-// Check if credentials are using defaults
+const saveLocalUsers = (users) => {
+  localStorage.setItem('bloomify_local_users', JSON.stringify(users));
+};
+
+export const auth = {
+  get currentUser() {
+    return getSavedCurrentUser();
+  },
+  set currentUser(val) {
+    if (val) {
+      localStorage.setItem('bloomify_current_user', JSON.stringify(val));
+    } else {
+      localStorage.removeItem('bloomify_current_user');
+    }
+    // Notify all listeners
+    authSubscribers.forEach(cb => cb(val));
+  }
+};
+
+// Add helper to mock reload in VerifyEmail.jsx
+if (auth.currentUser) {
+  auth.currentUser.reload = async function() {
+    const user = getSavedCurrentUser();
+    if (user) {
+      user.emailVerified = true;
+      auth.currentUser = user;
+      // Also update in registered users list
+      const users = getLocalUsers();
+      const idx = users.findIndex(u => u.uid === user.uid);
+      if (idx !== -1) {
+        users[idx].emailVerified = true;
+        saveLocalUsers(users);
+      }
+    }
+  };
+}
+
+export const db = {}; // Firestore placeholder
+
+export const onAuthStateChanged = (authObj, callback) => {
+  // Trigger callback immediately with initial state
+  callback(auth.currentUser);
+  authSubscribers.push(callback);
+  return () => {
+    authSubscribers = authSubscribers.filter(cb => cb !== callback);
+  };
+};
+
+// Return true so we use full interactive logic rather than static demo fallbacks
 export const isFirebaseConfigured = () => {
-  return firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_FIREBASE_API_KEY";
+  return true;
 };
 
 /**
- * Register a new user with Email & Password, store custom fields in Firestore,
- * and send an email verification link.
+ * Mock Register
  */
 export async function registerWithEmail({ firstName, middleName, lastName, email, phone, password }) {
-  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-  const user = userCredential.user;
+  // Simulate delay
+  await new Promise(resolve => setTimeout(resolve, 800));
 
+  const users = getLocalUsers();
+  const emailLower = email.toLowerCase().trim();
+
+  // Check duplicate email
+  if (users.some(u => u.email.toLowerCase().trim() === emailLower)) {
+    const err = new Error('An account with this email address already exists.');
+    err.code = 'auth/email-already-in-use';
+    throw err;
+  }
+
+  const uid = 'user_' + Math.random().toString(36).substr(2, 9);
   const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ');
 
-  // Update Firebase display name
-  await updateProfile(user, {
-    displayName: fullName
-  });
+  const newUser = {
+    uid,
+    email: emailLower,
+    displayName: fullName,
+    emailVerified: false,
+    phone
+  };
 
-  // Save detailed profile to Firestore
-  if (isFirebaseConfigured()) {
-    try {
-      await setDoc(doc(db, 'users', user.uid), {
-        firstName,
-        middleName: middleName || '',
-        lastName,
-        email,
-        phone,
-        createdAt: new Date().toISOString(),
-        favorites: ['lavender', 'strawberry', 'cherry-tomato'],
-        careLogs: {}
-      });
-    } catch (err) {
-      console.warn("Could not save user profile to Firestore:", err);
+  // Add to user database
+  users.push({ ...newUser, password });
+  saveLocalUsers(users);
+
+  // Save profile doc
+  const userProfile = {
+    firstName,
+    middleName: middleName || '',
+    lastName,
+    email: emailLower,
+    phone,
+    createdAt: new Date().toISOString(),
+    favorites: ['lavender', 'strawberry', 'cherry-tomato'],
+    careLogs: {}
+  };
+  localStorage.setItem(`bloomify_profile_${uid}`, JSON.stringify(userProfile));
+
+  // Log in as unverified user
+  auth.currentUser = {
+    ...newUser,
+    reload: async function() {
+      const cur = getSavedCurrentUser();
+      if (cur) {
+        cur.emailVerified = true;
+        auth.currentUser = cur;
+        
+        // Update database status
+        const list = getLocalUsers();
+        const idx = list.findIndex(u => u.uid === uid);
+        if (idx !== -1) {
+          list[idx].emailVerified = true;
+          saveLocalUsers(list);
+        }
+      }
     }
-  }
+  };
 
-  // Send Email Verification
-  await sendEmailVerification(user);
-
-  return user;
+  return auth.currentUser;
 }
 
 /**
- * Log in with Email & Password
+ * Mock Login
  */
 export async function loginWithEmail(email, password) {
-  const userCredential = await signInWithEmailAndPassword(auth, email, password);
-  return userCredential.user;
+  // Simulate delay
+  await new Promise(resolve => setTimeout(resolve, 800));
+
+  const users = getLocalUsers();
+  const emailLower = email.toLowerCase().trim();
+
+  const user = users.find(u => u.email.toLowerCase().trim() === emailLower);
+
+  if (!user || user.password !== password) {
+    const err = new Error('Invalid email or password. Please check your credentials.');
+    err.code = 'auth/invalid-credential';
+    throw err;
+  }
+
+  const loggedInUser = {
+    uid: user.uid,
+    email: user.email,
+    displayName: user.displayName,
+    emailVerified: user.emailVerified,
+    reload: async function() {
+      const cur = getSavedCurrentUser();
+      if (cur) {
+        cur.emailVerified = true;
+        auth.currentUser = cur;
+      }
+    }
+  };
+
+  auth.currentUser = loggedInUser;
+  return loggedInUser;
 }
 
 /**
- * Log in with Google Account
+ * Mock Google Sign In
  */
 export async function loginWithGoogle() {
-  const result = await signInWithPopup(auth, googleProvider);
-  const user = result.user;
+  // Simulate delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
 
-  // Create Firestore document if first time Google sign-in
-  if (isFirebaseConfigured()) {
-    try {
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
+  const mockGoogleUsers = [
+    { displayName: 'Flora Explorer', email: 'flora.explorer@gmail.com' },
+    { displayName: 'Green Thumb Jane', email: 'jane.gardening@gmail.com' },
+    { displayName: 'Leafy Collector', email: 'leafy.botanist@gmail.com' }
+  ];
 
-      if (!userDoc.exists()) {
-        const nameParts = (user.displayName || '').split(' ');
-        await setDoc(userDocRef, {
-          firstName: nameParts[0] || 'User',
-          middleName: '',
-          lastName: nameParts.slice(1).join(' ') || '',
-          email: user.email,
-          phone: user.phoneNumber || '',
-          createdAt: new Date().toISOString(),
-          favorites: ['lavender', 'strawberry', 'cherry-tomato'],
-          careLogs: {}
-        });
-      }
-    } catch (err) {
-      console.warn("Could not sync Google user profile with Firestore:", err);
-    }
+  // Pick one randomly
+  const base = mockGoogleUsers[Math.floor(Math.random() * mockGoogleUsers.length)];
+  const uid = 'google_' + Math.random().toString(36).substr(2, 9);
+
+  const loggedInUser = {
+    uid,
+    email: base.email,
+    displayName: base.displayName,
+    emailVerified: true,
+    reload: async () => {}
+  };
+
+  // Check if profile exists, otherwise create
+  const profileKey = `bloomify_profile_${uid}`;
+  if (!localStorage.getItem(profileKey)) {
+    const nameParts = base.displayName.split(' ');
+    const userProfile = {
+      firstName: nameParts[0],
+      middleName: '',
+      lastName: nameParts[1] || '',
+      email: base.email,
+      phone: '',
+      createdAt: new Date().toISOString(),
+      favorites: ['lavender', 'strawberry', 'cherry-tomato'],
+      careLogs: {}
+    };
+    localStorage.setItem(profileKey, JSON.stringify(userProfile));
   }
 
-  return user;
+  auth.currentUser = loggedInUser;
+  return loggedInUser;
 }
 
 /**
- * Resend email verification link
+ * Resend Link
  */
 export async function resendVerificationLink() {
-  if (auth.currentUser) {
-    await sendEmailVerification(auth.currentUser);
-  }
+  await new Promise(resolve => setTimeout(resolve, 500));
+  console.log("Mock verification link resent to:", auth.currentUser?.email);
 }
 
 /**
- * Sign out current user
+ * Logout
  */
 export async function logoutUser() {
-  await signOut(auth);
+  auth.currentUser = null;
 }
 
 /**
- * Fetch user document from Firestore
+ * Get profile data
  */
 export async function getUserProfile(uid) {
-  if (!isFirebaseConfigured()) return null;
-  try {
-    const docRef = doc(db, 'users', uid);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return docSnap.data();
-    }
-  } catch (err) {
-    console.warn("Error fetching user profile:", err);
-  }
-  return null;
+  const profile = localStorage.getItem(`bloomify_profile_${uid}`);
+  return profile ? JSON.parse(profile) : null;
 }
 
 /**
- * Sync user favorites to Firestore
+ * Sync user favorites
  */
 export async function syncUserFavorites(uid, favorites) {
-  if (!isFirebaseConfigured() || !uid) return;
-  try {
-    const userDocRef = doc(db, 'users', uid);
-    await updateDoc(userDocRef, { favorites });
-  } catch (err) {
-    console.warn("Error syncing favorites to Firestore:", err);
+  const profile = await getUserProfile(uid);
+  if (profile) {
+    profile.favorites = favorites;
+    localStorage.setItem(`bloomify_profile_${uid}`, JSON.stringify(profile));
   }
 }
 
 /**
- * Sync care logs to Firestore
+ * Sync care logs
  */
 export async function syncUserCareLogs(uid, careLogs) {
-  if (!isFirebaseConfigured() || !uid) return;
-  try {
-    const userDocRef = doc(db, 'users', uid);
-    await updateDoc(userDocRef, { careLogs });
-  } catch (err) {
-    console.warn("Error syncing care logs to Firestore:", err);
+  const profile = await getUserProfile(uid);
+  if (profile) {
+    profile.careLogs = careLogs;
+    localStorage.setItem(`bloomify_profile_${uid}`, JSON.stringify(profile));
   }
 }
