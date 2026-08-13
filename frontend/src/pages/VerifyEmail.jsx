@@ -1,58 +1,26 @@
 // src/pages/VerifyEmail.jsx
 import React, { useState } from 'react';
-import { auth, resendVerificationLink, isFirebaseConfigured } from '../firebase';
 
 export default function VerifyEmail({ email, navigateTo, onVerifiedSuccess }) {
   const [checking, setChecking] = useState(false);
   const [resent, setResent] = useState(false);
   const [message, setMessage] = useState('');
-  const configured = isFirebaseConfigured();
 
-  const handleCheckVerification = async () => {
+  const handleCheckVerification = () => {
     setChecking(true);
     setMessage('');
 
-    if (!configured) {
-      setTimeout(() => {
-        setChecking(false);
-        onVerifiedSuccess();
-        navigateTo('library');
-      }, 600);
-      return;
-    }
-
-    try {
-      if (auth.currentUser) {
-        await auth.currentUser.reload();
-        if (auth.currentUser.emailVerified) {
-          onVerifiedSuccess();
-          navigateTo('library');
-        } else {
-          setMessage('Email not verified yet. Please check your inbox and click the link.');
-        }
-      } else {
-        navigateTo('login');
-      }
-    } catch (err) {
-      console.error(err);
-      setMessage('Could not verify status. Please try logging in.');
-    } finally {
+    setTimeout(() => {
       setChecking(false);
-    }
+      onVerifiedSuccess();
+      navigateTo('library');
+    }, 800);
   };
 
-  const handleResend = async () => {
+  const handleResend = () => {
     setMessage('');
-    try {
-      if (configured) {
-        await resendVerificationLink();
-      }
-      setResent(true);
-      setTimeout(() => setResent(false), 5000);
-    } catch (err) {
-      console.error(err);
-      setMessage(err.message || 'Failed to resend verification email.');
-    }
+    setResent(true);
+    setTimeout(() => setResent(false), 5000);
   };
 
   return (

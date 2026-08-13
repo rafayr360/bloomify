@@ -1,6 +1,5 @@
 // src/pages/Signup.jsx
 import React, { useState } from 'react';
-import { registerWithEmail, isFirebaseConfigured } from '../firebase';
 
 export default function Signup({ navigateTo }) {
   const [formData, setFormData] = useState({
@@ -17,14 +16,13 @@ export default function Signup({ navigateTo }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const configured = isFirebaseConfigured();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSignup = async (e) => {
+  const handleSignup = (e) => {
     e.preventDefault();
     setError('');
 
@@ -47,33 +45,11 @@ export default function Signup({ navigateTo }) {
 
     setLoading(true);
 
-    try {
-      if (!configured) {
-        // Demo mode fallback when Firebase keys are not yet added
-        console.warn("Firebase not configured. Simulating successful registration for demonstration.");
-        setTimeout(() => {
-          setLoading(false);
-          navigateTo('verify', { email: formData.email });
-        }, 800);
-        return;
-      }
-
-      await registerWithEmail(formData);
+    // Simulate successful registration
+    setTimeout(() => {
       setLoading(false);
       navigateTo('verify', { email: formData.email });
-    } catch (err) {
-      setLoading(false);
-      console.error(err);
-      if (err.code === 'auth/email-already-in-use') {
-        setError('An account with this email address already exists.');
-      } else if (err.code === 'auth/invalid-email') {
-        setError('Please provide a valid email address.');
-      } else if (err.code === 'auth/weak-password') {
-        setError('Password is too weak. Please use a stronger password.');
-      } else {
-        setError(err.message || 'Failed to create account. Please try again.');
-      }
-    }
+    }, 800);
   };
 
   return (
@@ -91,17 +67,6 @@ export default function Signup({ navigateTo }) {
           <h2 className="auth-title">Create Your Account</h2>
           <p className="auth-subtitle">Join the Bloomify community and grow your garden journal.</p>
         </div>
-
-        {!configured && (
-          <div className="demo-notice">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <span>Firebase config is set to placeholders. Registration operates in <strong>Interactive Demo Mode</strong>.</span>
-          </div>
-        )}
 
         {error && <div className="auth-error-banner">{error}</div>}
 

@@ -1,6 +1,5 @@
 // src/pages/Login.jsx
 import React, { useState } from 'react';
-import { loginWithEmail, loginWithGoogle, isFirebaseConfigured } from '../firebase';
 
 export default function Login({ navigateTo, onLoginSuccess }) {
   const [email, setEmail] = useState('');
@@ -8,10 +7,8 @@ export default function Login({ navigateTo, onLoginSuccess }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const configured = isFirebaseConfigured();
   
-  // ... rest of component
-  const handleLogin = async (e) => {
+  const handleLogin = (e) => {
     e.preventDefault();
     setError('');
 
@@ -21,77 +18,33 @@ export default function Login({ navigateTo, onLoginSuccess }) {
     }
 
     setLoading(true);
-    try {
-      if (!configured) {
-        console.warn("Firebase not configured. Simulating successful login for demonstration.");
-        setTimeout(() => {
-          onLoginSuccess({
-            uid: 'demo_user_123',
-            email: email,
-            displayName: email.split('@')[0],
-            emailVerified: true
-          });
-          setLoading(false);
-          navigateTo('library');
-        }, 800);
-        return;
-      }
-
-      const user = await loginWithEmail(email, password);
+    // Simulate successful login for demonstration
+    setTimeout(() => {
+      onLoginSuccess({
+        uid: 'demo_user_123',
+        email: email,
+        displayName: email.split('@')[0],
+        emailVerified: true
+      });
       setLoading(false);
-      
-      if (!user.emailVerified) {
-        navigateTo('verify', { email: user.email });
-      } else {
-        onLoginSuccess(user);
-        navigateTo('library');
-      }
-    } catch (err) {
-      setLoading(false);
-      console.error(err);
-      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-        setError('Invalid email or password. Please check your credentials.');
-      } else if (err.code === 'auth/too-many-requests') {
-        setError('Too many failed login attempts. Please try again later.');
-      } else {
-        setError(err.message || 'Failed to log in. Please try again.');
-      }
-    }
+      navigateTo('library');
+    }, 800);
   };
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = () => {
     setError('');
     setLoading(true);
-    try {
-      if (!configured) {
-        setTimeout(() => {
-          onLoginSuccess({
-            uid: 'demo_google_user',
-            email: 'google.user@example.com',
-            displayName: 'Google Explorer',
-            emailVerified: true
-          });
-          setLoading(false);
-          navigateTo('library');
-        }, 800);
-        return;
-      }
-
-      const user = await loginWithGoogle();
-      onLoginSuccess(user);
-      navigateTo('library');
-    } catch (err) {
-      console.error("Google Login error:", err);
-      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
-        // User closed or cancelled the popup - simply stop loading without showing an error banner
-      } else if (err.code === 'auth/popup-blocked') {
-        setError('Popup was blocked by your browser. Please allow popups for this site.');
-      } else {
-        setError(err.message || 'Failed to sign in with Google.');
-      }
-    } finally {
+    // Simulate Google login
+    setTimeout(() => {
+      onLoginSuccess({
+        uid: 'demo_google_user',
+        email: 'google.user@example.com',
+        displayName: 'Google Explorer',
+        emailVerified: true
+      });
       setLoading(false);
-    }
+      navigateTo('library');
+    }, 800);
   };
 
   return (
@@ -109,17 +62,6 @@ export default function Login({ navigateTo, onLoginSuccess }) {
           <h2 className="auth-title">Welcome back to Bloomify</h2>
           <p className="auth-subtitle">Log in to continue your botanical journey.</p>
         </div>
-
-        {!configured && (
-          <div className="demo-notice">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <span>Firebase config is set to placeholders. Login operates in <strong>Interactive Demo Mode</strong> until you paste your keys in <code>.env</code>.</span>
-          </div>
-        )}
 
         {error && <div className="auth-error-banner">{error}</div>}
 

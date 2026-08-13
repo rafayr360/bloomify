@@ -9,20 +9,18 @@ import AIRecommendations from './pages/AIRecommendations';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import VerifyEmail from './pages/VerifyEmail';
-import { 
-  auth, 
-  onAuthStateChanged, 
-  logoutUser, 
-  getUserProfile, 
-  syncUserFavorites, 
-  syncUserCareLogs 
-} from './firebase';
 import './App.css';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('library');
   const [selectedPlantId, setSelectedPlantId] = useState(null);
-  const [currentUser, setCurrentUser] = useState(null);
+  
+  // Track logged in user locally
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('bloomify_current_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+  
   const [verifyEmail, setVerifyEmail] = useState('');
   const [guestAuthModal, setGuestAuthModal] = useState(false);
 
@@ -30,31 +28,63 @@ export default function App() {
   const [favorites, setFavorites] = useState([]);
   const [careLogs, setCareLogs] = useState({});
 
-  // Listen to Auth State Changes
+  // Sync state when user logs in/out or data updates
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setCurrentUser(user);
-        
-        // Load user-specific profile & data from Firestore
-        const profile = await getUserProfile(user.uid);
-        if (profile) {
-          if (profile.favorites) setFavorites(profile.favorites);
-          if (profile.careLogs) setCareLogs(profile.careLogs);
-        } else {
-          // Fallback initial values
-          setFavorites(['lavender', 'strawberry', 'cherry-tomato']);
-        }
+    if (currentUser) {
+      // Load user profile from local storage
+      const profileKey = `bloomify_profile_${currentUser.uid}`;
+      const savedProfile = localStorage.getItem(profileKey);
+      
+      if (savedProfile) {
+        const profile = JSON.parse(savedProfile);
+        setFavorites(profile.favorites || ['lavender', 'strawberry', 'cherry-tomato']);
+        setCareLogs(profile.careLogs || {});
       } else {
-        setCurrentUser(null);
-        // Reset to guest local state
-        const savedFavs = localStorage.getItem('bloomify_guest_favorites');
-        setFavorites(savedFavs ? JSON.parse(savedFavs) : ['lavender', 'strawberry']);
+        // Create initial profile for this user
+        const initialProfile = {
+          favorites: ['lavender', 'strawberry', 'cherry-tomato'],
+          careLogs: {}
+        };
+        localStorage.setItem(profileKey, JSON.stringify(initialProfile));
+        setFavorites(initialProfile.favorites);
+        setCareLogs(initialProfile.careLogs);
       }
-    });
+      localStorage.setItem('bloomify_current_user', JSON.stringify(currentUser));
+    } else {
+      // Load guest state from local storage
+      const savedFavs = localStorage.getItem('bloomify_guest_favorites');
+      const savedLogs = localStorage.getItem('bloomify_guest_care_logs');
+      setFavorites(savedFavs ? JSON.parse(savedFavs) : ['lavender', 'strawberry']);
+      setCareLogs(savedLogs ? JSON.parse(savedLogs) : {});
+      localStorage.removeItem('bloomify_current_user');
+    }
+  }, [currentUser]);
 
-    return () => unsubscribe();
-  }, []);
+  // Sync user favorites to local storage profile when changed
+  const saveUserFavorites = (updatedFavs) => {
+    if (currentUser) {
+      const profileKey = `bloomify_profile_${currentUser.uid}`;
+      const savedProfile = localStorage.getItem(profileKey);
+      const profile = savedProfile ? JSON.parse(savedProfile) : {};
+      profile.favorites = updatedFavs;
+      localStorage.setItem(profileKey, JSON.stringify(profile));
+    } else {
+      localStorage.setItem('bloomify_guest_favorites', JSON.stringify(updatedFavs));
+    }
+  };
+
+  // Sync user care logs to local storage profile when changed
+  const saveUserCareLogs = (updatedLogs) => {
+    if (currentUser) {
+      const profileKey = `bloomify_profile_${currentUser.uid}`;
+      const savedProfile = localStorage.getItem(profileKey);
+      const profile = savedProfile ? JSON.parse(savedProfile) : {};
+      profile.careLogs = updatedLogs;
+      localStorage.setItem(profileKey, JSON.stringify(profile));
+    } else {
+      localStorage.setItem('bloomify_guest_care_logs', JSON.stringify(updatedLogs));
+    }
+  };
 
   const navigateTo = (page, options = null) => {
     if (options && typeof options === 'object') {
@@ -63,7 +93,7 @@ export default function App() {
       setSelectedPlantId(options);
     }
 
-    // Require login for Garden Journal
+    // Require login for Garden Journal page
     if (page === 'favorites' && !currentUser) {
       setGuestAuthModal(true);
       return;
@@ -78,10 +108,10 @@ export default function App() {
     setGuestAuthModal(false);
   };
 
-  const handleLogout = async () => {
-    await logoutUser();
+  const handleLogout = () => {
     setCurrentUser(null);
     setFavorites([]);
+    setCareLogs({});
     setCurrentPage('library');
   };
 
@@ -95,11 +125,7 @@ export default function App() {
       const updated = prev.includes(plantId) 
         ? prev.filter(id => id !== plantId) 
         : [...prev, plantId];
-      
-      // Sync with Firestore for authenticated user
-      if (currentUser) {
-        syncUserFavorites(currentUser.uid, updated);
-      }
+      saveUserFavorites(updated);
       return updated;
     });
   };
@@ -116,9 +142,7 @@ export default function App() {
         ...prev,
         [plantId]: [log, ...plantLogs]
       };
-      if (currentUser) {
-        syncUserCareLogs(currentUser.uid, updated);
-      }
+      saveUserCareLogs(updated);
       return updated;
     });
   };
@@ -132,9 +156,7 @@ export default function App() {
         ...prev,
         [plantId]: plantLogs.filter(log => log.id !== logId)
       };
-      if (currentUser) {
-        syncUserCareLogs(currentUser.uid, updated);
-      }
+      saveUserCareLogs(updated);
       return updated;
     });
   };
@@ -245,7 +267,12 @@ export default function App() {
           <VerifyEmail 
             email={verifyEmail}
             navigateTo={navigateTo}
-            onVerifiedSuccess={() => onLoginSuccess(auth.currentUser)}
+            onVerifiedSuccess={() => onLoginSuccess({
+              uid: 'demo_user_123',
+              email: verifyEmail || 'user@example.com',
+              displayName: (verifyEmail || 'Gardener').split('@')[0],
+              emailVerified: true
+            })}
           />
         )}
       </main>
