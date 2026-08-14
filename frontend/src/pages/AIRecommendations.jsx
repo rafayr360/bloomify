@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import PlantCard from '../components/PlantCard';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export default function AIRecommendations({ navigateTo, plants }) {
   const [lightLevel, setLightLevel] = useState('Full Sun');
   const [waterHabit, setWaterHabit] = useState('Low');
@@ -9,44 +11,73 @@ export default function AIRecommendations({ navigateTo, plants }) {
   const [customPrompt, setCustomPrompt] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [recommendations, setRecommendations] = useState(null);
+  const [error, setError] = useState(null);
 
-  const handleRecommend = (e) => {
+  const lightLabels = {
+    'Full Sun': 'Direct Sunlight (Full Sun)',
+    'Partial Shade': 'Indirect Sunlight (Partial Shade)',
+    'Full Shade': 'Low Sunlight (Full Shade / Indoors)'
+  };
+
+  const waterLabels = {
+    Low: 'Low maintenance, I often forget to water',
+    Moderate: 'Regular watering, about once a week',
+    High: 'High attention, willing to water daily'
+  };
+
+  const spaceLabels = {
+    Balcony: 'Outdoor balcony / patio',
+    Indoor: 'Indoor bedroom / living room',
+    Garden: 'Outdoor garden bed'
+  };
+
+  const handleRecommend = async (e) => {
     e.preventDefault();
     setIsAnalyzing(true);
     setRecommendations(null);
+    setError(null);
 
-    // Simulate AI LLM recommendation logic against seeded dataset
-    setTimeout(() => {
-      let filtered = plants.filter(plant => {
-        if (lightLevel === 'Full Sun' && plant.sunlight !== 'Full Sun') return false;
-        if (lightLevel === 'Full Shade' && plant.sunlight !== 'Full Shade') return false;
-        if (waterHabit === 'Low' && plant.waterFrequency === 'High') return false;
-        return true;
+    // Combine the structured dropdowns AND the free-text description
+    // into one plain-language prompt so nothing the user types gets ignored.
+    const description = [
+      `Sunlight: ${lightLabels[lightLevel]}.`,
+      `Watering habits: ${waterLabels[waterHabit]}.`,
+      `Environment: ${spaceLabels[spaceType]}.`,
+      customPrompt.trim() ? `Additional details from the user: "${customPrompt.trim()}"` : ''
+    ].filter(Boolean).join(' ');
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/recommend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description })
       });
 
-      // If text prompt was entered, filter further by keywords
-      if (customPrompt.trim()) {
-        const query = customPrompt.toLowerCase();
-        const promptMatches = plants.filter(plant => 
-          plant.name.toLowerCase().includes(query) ||
-          plant.scientificName.toLowerCase().includes(query) ||
-          plant.description.toLowerCase().includes(query) ||
-          plant.category.toLowerCase().includes(query) ||
-          (query.includes('forget') || query.includes('easy')) && plant.difficulty === 'Easy'
-        );
-        if (promptMatches.length > 0) {
-          filtered = promptMatches;
-        }
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Something went wrong getting recommendations.');
       }
 
-      // Fallback: pick top 3 matches if filter is empty
-      if (filtered.length === 0) {
-        filtered = plants.slice(0, 3);
-      }
+      // The backend returns matched plant records (by slug) plus a "reason".
+      // We re-match by id against the already-loaded `plants` prop so the
+      // shape stays 100% consistent with what PlantCard expects everywhere
+      // else in the app (name, scientificName, imageUrl, etc.).
+      const matched = (data.recommendations || [])
+        .map(rec => {
+          const fullPlant = plants.find(p => p.id === rec.id);
+          if (!fullPlant) return null;
+          return { ...fullPlant, aiReason: rec.reason };
+        })
+        .filter(Boolean);
 
-      setRecommendations(filtered.slice(0, 6));
+      setRecommendations(matched);
+    } catch (err) {
+      console.error('Recommendation error:', err);
+      setError(err.message || 'Unable to get recommendations right now. Please try again.');
+    } finally {
       setIsAnalyzing(false);
-    }, 1200);
+    }
   };
 
   return (
@@ -92,7 +123,7 @@ export default function AIRecommendations({ navigateTo, plants }) {
 
           <div className="form-group">
             <label>Describe your space (Optional)</label>
-            <textarea 
+            <textarea
               rows="3"
               placeholder="e.g., 'Small balcony with afternoon heat, looking for low-maintenance edible herbs...'"
               value={customPrompt}
@@ -113,28 +144,51 @@ export default function AIRecommendations({ navigateTo, plants }) {
             </div>
           )}
 
-          {!isAnalyzing && recommendations && (
+          {!isAnalyzing && error && (
+            <div className="ai-error">
+              <div className="ai-icon">⚠️</div>
+              <h3>Couldn't get recommendations</h3>
+              <p>{error}</p>
+              <p className="results-reasoning">
+                Make sure the backend server is running and your AI_API_KEY is set correctly.
+              </p>
+            </div>
+          )}
+
+          {!isAnalyzing && !error && recommendations && recommendations.length > 0 && (
             <div className="ai-results">
               <h2>Tailored Recommendations ({recommendations.length})</h2>
               <p className="results-reasoning">
-                Based on your preference for <strong>{lightLevel}</strong> and <strong>{waterHabit} watering</strong>, here are the top plants for your space:
+                Based on your space and preferences, here are the top plants for you:
               </p>
 
               <div className="plant-grid">
                 {recommendations.map(plant => (
-                  <PlantCard 
-                    key={plant.id}
-                    plant={plant}
-                    navigateTo={navigateTo}
-                    isFavorite={false}
-                    toggleFavorite={() => {}}
-                  />
+                  <div key={plant.id}>
+                    <PlantCard
+                      plant={plant}
+                      navigateTo={navigateTo}
+                      isFavorite={false}
+                      toggleFavorite={() => {}}
+                    />
+                    {plant.aiReason && (
+                      <p className="ai-reason">💡 {plant.aiReason}</p>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
           )}
 
-          {!isAnalyzing && !recommendations && (
+          {!isAnalyzing && !error && recommendations && recommendations.length === 0 && (
+            <div className="ai-placeholder">
+              <div className="ai-icon">🤔</div>
+              <h3>No matches found</h3>
+              <p>Try adjusting your space parameters or description and try again.</p>
+            </div>
+          )}
+
+          {!isAnalyzing && !error && !recommendations && (
             <div className="ai-placeholder">
               <div className="ai-icon">🤖🌱</div>
               <h3>Ready to recommend your ideal plants</h3>

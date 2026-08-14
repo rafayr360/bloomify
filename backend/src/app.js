@@ -24,6 +24,9 @@ app.use('/api/types', typesRoutes);
 const featuresRoutes = require('./routes/features.routes');
 app.use('/api/features', featuresRoutes);
 
+const recommendRoutes = require('./routes/recommend.routes');
+app.use('/api/recommend', recommendRoutes);
+
 // 404 fallback
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });

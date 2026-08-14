@@ -58,7 +58,7 @@ Plant catalog:
 ${JSON.stringify(catalogForPrompt)}`;
 
     // 3. Call the Gemini API
-    const model = 'gemini-2.5-flash';
+    const model = 'gemini-3.5-flash';
     const aiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
       {
