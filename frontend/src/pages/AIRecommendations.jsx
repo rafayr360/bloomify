@@ -2,15 +2,17 @@
 import React, { useState } from 'react';
 import PlantCard from '../components/PlantCard';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const rawApiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = rawApiUrl.replace(/\/api\/?$/, '');
 
-export default function AIRecommendations({ navigateTo, plants }) {
+export default function AIRecommendations({ navigateTo, plants = [] }) {
   const [lightLevel, setLightLevel] = useState('Full Sun');
   const [waterHabit, setWaterHabit] = useState('Low');
   const [spaceType, setSpaceType] = useState('Balcony');
   const [customPrompt, setCustomPrompt] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [recommendations, setRecommendations] = useState(null);
+  const [aiProvider, setAiProvider] = useState(null);
   const [error, setError] = useState(null);
 
   const lightLabels = {
@@ -59,19 +61,35 @@ export default function AIRecommendations({ navigateTo, plants }) {
         throw new Error(data.error || 'Something went wrong getting recommendations.');
       }
 
-      // The backend returns matched plant records (by slug) plus a "reason".
-      // We re-match by id against the already-loaded `plants` prop so the
-      // shape stays 100% consistent with what PlantCard expects everywhere
-      // else in the app (name, scientificName, imageUrl, etc.).
+      // Match backend returned recommendations against frontend plants array
       const matched = (data.recommendations || [])
         .map(rec => {
-          const fullPlant = plants.find(p => p.id === rec.id);
-          if (!fullPlant) return null;
+          // Find matching plant by slug, string ID, integer ID, or common name
+          const fullPlant = (plants || []).find(p =>
+            p.id === rec.slug ||
+            p.id === rec.id ||
+            String(p.id) === String(rec.id) ||
+            p.id === String(rec.slug) ||
+            (p.name && rec.common_name && p.name.toLowerCase() === rec.common_name.toLowerCase())
+          ) || {
+            id: rec.slug || rec.id || Math.random().toString(),
+            name: rec.common_name || rec.name || 'Recommended Plant',
+            scientificName: rec.scientific_name || '',
+            category: (rec.category || 'flower').toLowerCase(),
+            sunlight: rec.sunlight || 'Full Sun',
+            waterFrequency: rec.water_frequency || 'Moderate',
+            soilType: rec.soil_type || 'Well-draining',
+            difficulty: rec.difficulty || 'Easy',
+            description: rec.description || '',
+            imageUrl: rec.image_url || '/lavender.jpg'
+          };
+
           return { ...fullPlant, aiReason: rec.reason };
         })
         .filter(Boolean);
 
       setRecommendations(matched);
+      setAiProvider(data.provider || 'gemini');
     } catch (err) {
       console.error('Recommendation error:', err);
       setError(err.message || 'Unable to get recommendations right now. Please try again.');
@@ -157,7 +175,14 @@ export default function AIRecommendations({ navigateTo, plants }) {
 
           {!isAnalyzing && !error && recommendations && recommendations.length > 0 && (
             <div className="ai-results">
-              <h2>Tailored Recommendations ({recommendations.length})</h2>
+              <div className="results-header-bar">
+                <h2>Tailored Recommendations ({recommendations.length})</h2>
+                {aiProvider && (
+                  <span className={`provider-badge provider-${aiProvider}`}>
+                    {aiProvider === 'gemini' ? '✨ Powered by Google Gemini AI' : '🌿 Botanical Matching Engine'}
+                  </span>
+                )}
+              </div>
               <p className="results-reasoning">
                 Based on your space and preferences, here are the top plants for you:
               </p>

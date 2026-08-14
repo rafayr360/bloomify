@@ -8,7 +8,9 @@ export default function Favorites({ navigateTo, favorites, toggleFavorite, plant
   return (
     <div className="page-container favorites-page">
       <header className="page-header">
-        <h1 className="page-title">My Garden Journal</h1>
+        <h1 className="page-title">
+          My Garden Journal <span className="journal-gold-count">({savedPlants.length})</span>
+        </h1>
         <p className="page-subtitle">
           Your personal collection of saved plants, customized care schedules, and favorite botanicals.
         </p>

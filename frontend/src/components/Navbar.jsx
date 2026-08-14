@@ -41,7 +41,6 @@ export default function Navbar({ currentPage, navigateTo, favoriteCount, current
           onClick={() => navigateTo('favorites')}
         >
           Garden Journal
-          {currentUser && favoriteCount > 0 && <span className="nav-badge">{favoriteCount}</span>}
         </button>
         <button 
           className={`nav-item ai-btn ${currentPage === 'ai' ? 'active' : ''}`}

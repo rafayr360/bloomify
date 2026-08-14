@@ -256,7 +256,7 @@ export default function App() {
       <Navbar 
         currentPage={currentPage} 
         navigateTo={navigateTo} 
-        favoriteCount={favorites.length}
+        favoriteCount={favorites.filter(id => plants.some(p => p.id === id)).length}
         currentUser={currentUser}
         onLogout={handleLogout}
         theme={theme}
