@@ -99,11 +99,7 @@ export default function Login({ navigateTo, onLoginSuccess }) {
         {/* Logo and Header */}
         <div className="auth-header">
           <div className="auth-logo-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-              <path d="M12 3c-2.5 3.5-3 7-3 10 0 3.3 2.7 6 6 6s6-2.7 6-6c0-3-0.5-6.5-3-10z" fill="rgba(16, 185, 129, 0.4)" stroke="#10b981" strokeWidth="1.8" />
-              <path d="M12 3c2.5 3.5 3 7 3 10 0 3.3-2.7 6-6 6s-6-2.7-6-6c0-3 0.5-6.5 3-10z" fill="rgba(255, 184, 0, 0.4)" stroke="#ffb800" strokeWidth="1.8" />
-              <circle cx="12" cy="12" r="2" fill="#00f5a0" />
-            </svg>
+            <img src="/bloomify-logo.png" alt="Bloomify Logo" className="auth-logo-img" />
           </div>
           <h2 className="auth-title">Welcome back to Bloomify</h2>
           <p className="auth-subtitle">Log in to continue your botanical journey.</p>

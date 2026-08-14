@@ -38,22 +38,35 @@
   cursor: pointer;
 }
 
-.logo-icon.lotus-logo {
-  width: 42px;
-  height: 42px;
+.logo-icon.bloomify-brand-logo {
+  width: 44px;
+  height: 44px;
   border-radius: 12px;
-  background: linear-gradient(135deg, rgba(255, 184, 0, 0.25), rgba(0, 245, 160, 0.25));
-  border: 1px solid var(--accent-secondary);
-  box-shadow: 0 0 18px var(--accent-glow);
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid var(--accent-secondary);
+  box-shadow: 0 0 16px var(--accent-glow);
+  background: #11281f;
+  transition: transform 0.2s ease;
 }
 
-[data-theme="light"] .logo-icon.lotus-logo {
-  background: linear-gradient(135deg, rgba(217, 107, 39, 0.15), rgba(91, 112, 82, 0.15));
-  border-color: var(--accent-primary);
-  box-shadow: 0 4px 12px rgba(217, 107, 39, 0.15);
+.navbar-brand:hover .logo-icon.bloomify-brand-logo {
+  transform: scale(1.06);
+}
+
+.brand-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.auth-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 14px;
 }
 
 .logo-text {

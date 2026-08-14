@@ -17,14 +17,8 @@ export default function Navbar({ currentPage, navigateTo, favoriteCount, current
   return (
     <header className="navbar">
       <div className="navbar-brand" onClick={() => navigateTo('library')}>
-        <div className="logo-icon lotus-logo">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            {/* Emerald Lotus Bloom Icon */}
-            <path d="M12 3c-2.5 3.5-3 7-3 10 0 3.3 2.7 6 6 6s6-2.7 6-6c0-3-0.5-6.5-3-10z" fill="rgba(16, 185, 129, 0.25)" stroke="#10b981" />
-            <path d="M12 3c2.5 3.5 3 7 3 10 0 3.3-2.7 6-6 6s-6-2.7-6-6c0-3 0.5-6.5 3-10z" fill="rgba(52, 211, 153, 0.25)" stroke="#34d399" />
-            <path d="M12 10v9" stroke="#10b981" strokeWidth="2.5" />
-            <circle cx="12" cy="12" r="2.5" fill="#10b981" />
-          </svg>
+        <div className="logo-icon bloomify-brand-logo">
+          <img src="/bloomify-logo.png" alt="Bloomify Logo" className="brand-logo-img" />
         </div>
         <span className="logo-text">Bloomify</span>
       </div>
