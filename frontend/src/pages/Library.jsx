@@ -34,7 +34,7 @@ export default function Library({ navigateTo, favorites, toggleFavorite, plants,
         </header>
         <div className="loading-spinner-container">
           <div className="loading-spinner"></div>
-          <p>Connecting to Neon Database & loading plant data...</p>
+          <p>Loading plant data...</p>
         </div>
       </div>
     );
