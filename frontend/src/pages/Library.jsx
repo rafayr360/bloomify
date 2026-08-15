@@ -1,4 +1,3 @@
-// src/pages/Library.jsx
 import React, { useState, useMemo } from 'react';
 import FilterBar from '../components/FilterBar';
 import PlantCard from '../components/PlantCard';
