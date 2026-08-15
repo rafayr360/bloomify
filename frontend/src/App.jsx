@@ -118,10 +118,11 @@ export default function App() {
           email: firebaseUser.email,
           displayName: firebaseUser.displayName,
           emailVerified: firebaseUser.emailVerified,
+          // Always prefer Firestore profile name over Gmail/Firebase displayName
           firstName: profile?.firstName || firebaseUser.displayName?.split(' ')[0] || 'Gardener',
           lastName: profile?.lastName || firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
           phone: profile?.phone || '',
-          ...profile
+          ...profile  // Firestore profile overwrites everything above if it exists
         };
         setCurrentUser(userData);
         localStorage.setItem('bloomify_current_user', JSON.stringify(userData));
