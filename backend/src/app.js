@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
+
 
 const app = express();
 
@@ -20,6 +22,22 @@ app.use(cors({
   },
   credentials: true,
 }));
+
+// General limiter — applies to everything
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,                 // 100 requests per IP per window
+  message: { error: 'Too many requests, please try again later.' },
+});
+app.use(generalLimiter);
+
+// Stricter limiter — just for the AI recommendation route
+const recommendLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 8, // only 8 AI calls per IP per 15 min
+  message: { error: 'Too many recommendation requests, please slow down.' },
+});
+
 app.use(express.json());
 
 // Health check — build and test this FIRST before anything else
@@ -41,7 +59,7 @@ const featuresRoutes = require('./routes/features.routes');
 app.use('/api/features', featuresRoutes);
 
 const recommendRoutes = require('./routes/recommend.routes');
-app.use('/api/recommend', recommendRoutes);
+app.use('/api/recommend', recommendLimiter, recommendRoutes);
 
 // 404 fallback
 app.use((req, res) => {
