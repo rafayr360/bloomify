@@ -98,6 +98,20 @@ exports.getRecommendations = async (req, res) => {
     return res.status(400).json({ error: 'A "description" of the space is required.' });
   }
 
+  const trimmedDescription = description.trim();
+
+  const MAX_DESCRIPTION_LENGTH = 500;
+  if (trimmedDescription.length > MAX_DESCRIPTION_LENGTH) {
+    return res.status(400).json({
+      error: `Description is too long. Please keep it under ${MAX_DESCRIPTION_LENGTH} characters.`
+    });
+  }
+
+  const MIN_DESCRIPTION_LENGTH = 3;
+  if (trimmedDescription.length < MIN_DESCRIPTION_LENGTH) {
+    return res.status(400).json({ error: 'Please provide a bit more detail about your space.' });
+  }  
+
   try {
     // 1. Pull the real plant catalog from DB
     const catalogResult = await pool.query(`
@@ -146,7 +160,7 @@ Respond with ONLY valid JSON (no markdown fences, no preamble) in this exact sha
 {"recommendations":[{"slug":"plant-slug","reason":"one short sentence why this fits"}]}
 Only use slugs that appear in the provided catalog. Do not invent plants.`;
 
-    const userPrompt = `User's space: "${description.trim()}"
+    const userPrompt = `User's space: "${trimmedDescription}"
 
 Plant catalog:
 ${JSON.stringify(catalogForPrompt)}`;
@@ -230,4 +244,4 @@ ${JSON.stringify(catalogForPrompt)}`;
     console.error('Error generating recommendations:', err);
     res.status(500).json({ error: err.message });
   }
-};
+};
